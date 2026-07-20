@@ -111,6 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _showErrorDialog(responseData['message']);
       }
     } catch (e) {
+      LoaderManager.callLoader(context, false); // Show loader
       print('Error during login: $e');
       _showErrorDialog('An error occurred. Please try again. $e');
     }
@@ -294,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 24),
                     //version
-                    Text('V - 1.0.2+3', style: TextStyle(fontSize: 10, color: Colors.grey),)
+                    Text('V - 1.0.3+4', style: TextStyle(fontSize: 10, color: Colors.grey),)
                     
                     
                   ],
