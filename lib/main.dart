@@ -32,7 +32,10 @@ void main() {
 // const String BASE_URL = 'https://softwaresupport.co.in/iac/webservices'; // Application square
 
 //Live
-const String BASE_URL = 'http://10.105.102.55/iac/home/dashboard'; //IAC
+// const String BASE_URL = 'http://10.105.102.55/iac/home/dashboard'; //IAC
+
+const String BASE_URL = 'http://10.105.102.55/iac'; //IAC
+
 
 class MyApp extends StatelessWidget {
   @override
