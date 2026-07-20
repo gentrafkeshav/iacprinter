@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       print('Error during login: $e');
-      _showErrorDialog('An error occurred. Please try again.');
+      _showErrorDialog('An error occurred. Please try again. $e');
     }
   }
 
@@ -291,6 +291,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 24),
+                    //version
+                    Text('V - 1.0.2+3', style: TextStyle(fontSize: 10, color: Colors.grey),)
+                    
+                    
                   ],
                 ),
               ),
