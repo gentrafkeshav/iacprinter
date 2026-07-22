@@ -22,7 +22,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
           // Welcome text and Icons
           Text(
-            'Welcome IAC',
+            'Welcome IAC : 1.0.4+5 ',
             style: TextStyle(color: Colors.white, fontSize: 14), // Still smaller
           ),
           SizedBox(width: 12),

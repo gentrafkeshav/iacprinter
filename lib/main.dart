@@ -12,12 +12,24 @@ Application Square server  - ${BASE_URL}/
 IAC Server
 
 
-login details
+login details dev
 username - imm@iac.com
 pass - Imm@123
+
+
+Live login details
+admin@iac.com
+Admin@123
+
  */
 
 /*
+
+ */
+
+/*
+1. change base url to live
+2. udpate version num in login and appheader with pubspec yaml version number
 
  */
 
@@ -27,16 +39,12 @@ void main() {
 }
 
 //api base url
-
+//
 // //dev
 // const String BASE_URL = 'https://softwaresupport.co.in/iac/webservices'; // Application square
 
 //Live
-// const String BASE_URL = 'http://10.105.102.55/iac/home/dashboard'; //IAC
-
-// const String BASE_URL = 'http://10.105.102.55/iac'; //IAC 1.0.2+3
-
-const String BASE_URL = 'http://10.105.102.55/iac/webservices'; //IAC 1.0.3+4
+const String BASE_URL = 'http://10.105.102.55/iac/webservices';
 
 
 class MyApp extends StatelessWidget {

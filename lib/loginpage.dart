@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
 
 import 'CommonConst/CustomLoader.dart';
-import 'GenerateQrCodeTwoScreen.dart'; // Assuming you're using GetX for navigation
+import 'GenerateQrCodeTwoScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -20,14 +20,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String? _selectedOption;
-  final List<String> _options = ['Option 1', 'Option 2', 'Option 3'];
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  // Password visibility toggle
+  bool _obscurePassword = true;
 
- int _tapCount = 0;
+  // Secret tap counter for logo
+  int _tapCount = 0;
   bool _showSecretLabel = false;
+  bool _showDevInfo = false;
   Timer? _hideTimer;
 
   @override
@@ -36,43 +38,64 @@ class _LoginScreenState extends State<LoginScreen> {
     print('LoginScreen initialized');
   }
 
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   void _onLogoTapped() {
     setState(() {
       _tapCount++;
-      if (_tapCount == 15) {
+
+      // Show dev info on 10 taps
+      if (_tapCount == 10) {
+        _showDevInfo = true;
+        _showSecretLabel = false;
+
+        // Cancel any existing timer
+        _hideTimer?.cancel();
+
+        // Auto-hide after 10 seconds
+        _hideTimer = Timer(const Duration(seconds: 10), () {
+          if (mounted) {
+            setState(() {
+              _showDevInfo = false;
+              _tapCount = 0;
+            });
+          }
+        });
+      }
+
+      // Show old secret label on 15 taps (kept for backward compatibility)
+      if (_tapCount == 15 && !_showDevInfo) {
         _showSecretLabel = true;
-        _hideTimer?.cancel(); // Cancel previous timer if any
+        _hideTimer?.cancel();
         _hideTimer = Timer(const Duration(seconds: 5), () {
-          setState(() {
-            _showSecretLabel = false;
-            _tapCount = 0; // Reset count
-          });
+          if (mounted) {
+            setState(() {
+              _showSecretLabel = false;
+              _tapCount = 0;
+            });
+          }
         });
       }
     });
   }
 
-   @override
-  void dispose() {
-    _hideTimer?.cancel();
-    super.dispose();
-  }
-
   // Function to handle login API call
   Future<void> _login() async {
-    // const String url = '${BASE_URL}/desktoplogin';
     const String url = '${BASE_URL}/desktoplogin';
 
     try {
-
-      LoaderManager.callLoader(context, true); // Show loader
+      LoaderManager.callLoader(context, true);
 
       final response = await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          //'Cookie': 'ci_session=a65be01c29d8852f37b5898596a2f9f54ed0a3e0',
         },
         body: {
           'email_id': _emailController.text,
@@ -80,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       );
 
-      LoaderManager.callLoader(context, false); // Show loader
+      LoaderManager.callLoader(context, false);
 
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
@@ -103,15 +126,13 @@ class _LoginScreenState extends State<LoginScreen> {
         print('Login successful, data saved to SharedPreferences');
 
         // Navigate to next screen using GetX
-        //Get.offAll(() => const G()); // Replace HomeScreen with your next screen widget
-
-        Get.offAll(GenerateQRCode());
+        Get.offAll(() =>  GenerateQRCode());
       } else {
         // Failure case - Invalid credentials
-        _showErrorDialog(responseData['message']);
+        _showErrorDialog(responseData['message'] ?? 'Invalid credentials');
       }
     } catch (e) {
-      LoaderManager.callLoader(context, false); // Show loader
+      LoaderManager.callLoader(context, false);
       print('Error during login: $e');
       _showErrorDialog('An error occurred. Please try again. $e');
     }
@@ -127,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Dismiss dialog
+              Navigator.of(context).pop();
             },
             child: const Text('OK'),
           ),
@@ -138,9 +159,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('Screen width: ${MediaQuery.of(context).size.width}');
-    print('Screen height: ${MediaQuery.of(context).size.height}');
-
     return Scaffold(
       body: Stack(
         children: [
@@ -149,17 +167,18 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.green.shade900,
             width: double.infinity,
             height: double.infinity,
-            child: FutureBuilder(
-              future: Future.delayed(const Duration(milliseconds: 100)),
-              builder: (context, snapshot) {
-                print('Attempting to load background image');
-                return Image.asset(
-                  'assets/forest_aerial.jpg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    print('Error loading background: $error');
-                    return Container();
-                  },
+            child: Image.asset(
+              'assets/forest_aerial.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.green.shade800,
+                  child: const Center(
+                    child: Text(
+                      'Background Image',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ),
                 );
               },
             ),
@@ -178,38 +197,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
-
                     // IAC Logo
-                     GestureDetector(
-              onTap: _onLogoTapped,
-              child: Image.asset(
-                'assets/iac-Logo.png',
-                height: 60,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 60,
-                    color: Colors.grey.shade300,
-                    child: const Center(
-                      child: Text(
-                        'IAC',
-                        style: TextStyle(fontSize: 24),
+                    GestureDetector(
+                      onTap: _onLogoTapped,
+                      child: Image.asset(
+                        'assets/iac-Logo.png',
+                        height: 60,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 60,
+                            width: 60,
+                            color: Colors.grey.shade300,
+                            child: const Center(
+                              child: Text(
+                                'IAC',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-            if (_showSecretLabel)
-              const Padding(
-                padding: EdgeInsets.only(top: 8.0),
-                child: Text(
-                  "d-ev :k_e-sh:av 9*7/6+51.1-2'36#2",
-                  style: TextStyle(color: Colors.grey, fontSize: 8),
-                ),
-              ),
-
-
+                    if (_showSecretLabel)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          "d-ev :k_e-sh:av 9*7/6+51.1-2'36#2",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 8,
+                          ),
+                        ),
+                      ),
 
                     const SizedBox(height: 32),
 
@@ -223,49 +245,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Dropdown
-                    // Container(
-                    //   decoration: BoxDecoration(
-                    //     color: Colors.white,
-                    //     borderRadius: BorderRadius.circular(8),
-                    //   ),
-                    //   child: DropdownButtonFormField<String>(
-                    //     decoration: const InputDecoration(
-                    //       hintText: 'Select Option',
-                    //     ),
-                    //     isExpanded: true,
-                    //     value: _selectedOption,
-                    //     items: _options.map((String option) {
-                    //       return DropdownMenuItem<String>(
-                    //         value: option,
-                    //         child: Text(option),
-                    //       );
-                    //     }).toList(),
-                    //     onChanged: (String? newValue) {
-                    //       print('Option selected: $newValue');
-                    //       setState(() {
-                    //         _selectedOption = newValue;
-                    //       });
-                    //     },
-                    //   ),
-                    // ),
-                    const SizedBox(height: 16),
-
                     // Email Field
                     TextField(
                       controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         hintText: 'Email ID',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Password Field
+                    // Password Field with Hide/Show Toggle
                     TextField(
                       controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
                         hintText: 'Password',
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -282,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: _login, // Call login function
+                        onPressed: _login,
                         child: const Text(
                           'Log in',
                           style: TextStyle(
@@ -294,10 +316,106 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     const SizedBox(height: 24),
-                    //version
-                    Text('V - 1.0.3+4', style: TextStyle(fontSize: 10, color: Colors.grey),)
-                    
-                    
+
+                    // Version and Developer Info
+                    Column(
+                      children: [
+                        // Version
+                        Text(
+                          'V - 1.0.4+5',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+
+                        // Developer Info (shown on 10 taps)
+                        if (_showDevInfo)
+                          Container(
+                            margin: const EdgeInsets.only(top: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.blue.shade200,
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.code,
+                                      size: 16,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Developer Information',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Dev - Keshav Pawar',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.phone,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '9765112362',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.email,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'keshavpawar100@gmail.com',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -305,19 +423,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-// Placeholder for HomeScreen (replace with your actual next screen)
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: const Center(child: Text('Welcome to Home Screen!')),
     );
   }
 }
