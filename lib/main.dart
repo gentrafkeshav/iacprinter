@@ -38,12 +38,19 @@ void main() {
   runApp(MyApp());
 }
 
+/*
+//TODO : version trace History
+
+1.0.4+5 | 22/07/26 | Logo added, UIUX updated, Operator name added, Dark Light Mode added. / Keshav Pawar
+
+*/
+
+
 //api base url
-//
-// //dev
+//TODO : Application square Dev Server
 // const String BASE_URL = 'https://softwaresupport.co.in/iac/webservices'; // Application square
 
-//Live
+//TODO: Live IAC Local server
 const String BASE_URL = 'http://10.105.102.55/iac/webservices';
 
 
